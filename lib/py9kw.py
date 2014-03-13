@@ -19,7 +19,7 @@
 #
 
 import urllib.request
-import urllib.parse
+from urllib.parse import urlencode
 
 from base64 import b64encode
 from time import sleep
@@ -86,7 +86,19 @@ class py9kw:
 		if self.verbose:
 			print("[py9kw] Upload %d bytes to 9kw.eu..." % len(self.imagedata))
 		
-		self.captchaid	=	(urllib.request.urlopen(webservice_url,data=urllib.parse.urlencode(self.data).encode('utf-8')).read()).decode('utf-8')
+		self.captchaid	=	(urllib.request.urlopen(webservice_url,data=urlencode(self.data).encode('utf-8')).read()).decode('utf-8')
+		for i in range(10,30):
+			if '00%d' % i in self.captchaid:
+				if self.verbose:
+					print("Error %d:" % i ,error_codes[i])
+					exit(1)
+				return error_codes[i],False
+		for i in range(0,9):
+			if '000%d' % i in self.captchaid:
+				if self.verbose:
+					print("Error: %d" % i,error_codes[i])
+					exit(1)
+				return error_codes[i],False
 		
 		if self.verbose:
 			print("[py9kw] Uploaded. Captcha-id:",self.captchaid)
@@ -120,7 +132,7 @@ class py9kw:
 		}
 		if self.verbose:
 			print("[py9kw] Try to get the result from 9kw.eu...")
-		self.string	=	(urllib.request.urlopen('%s?%s' % (webservice_url,urllib.parse.urlencode(self.data))).read()).decode('utf-8')
+		self.string	=	(urllib.request.urlopen('%s?%s' % (webservice_url,urlencode(self.data))).read()).decode('utf-8')
 		if self.string == 'NO DATA':
 			return 'No Data!',False
 		for i in range(10,30):
@@ -152,7 +164,7 @@ class py9kw:
 		}
 		if self.verbose:
 			print('[py9kw] Sending correct=%s (1=Ok,2=Fail)' % self.correct)
-		urllib.request.urlopen('%s?%s' % (webservice_url,urllib.parse.urlencode(self.data))).read()
+		urllib.request.urlopen('%s?%s' % (webservice_url,urlencode(self.data))).read()
 
 if __name__ == '__main__':
 	from sys import argv
@@ -162,7 +174,8 @@ if __name__ == '__main__':
 	
 	# Get a Sample-Captcha
 	try:
-		image_data = urllib.request.urlopen('http://jan-helbling.no-ip.biz/media/media/images/captcha.jpg').read()
+		print("Get a Samplecaptcha (=> http://jan-helbling.no-ip.biz/images/captcha.png string=cuobx)")
+		image_data = urllib.request.urlopen('http://jan-helbling.no-ip.biz/images/captcha.png').read()
 	except IOError as e:
 		print('Error while get a SampleCaptcha from a website!')
 		if hasattr(e,'args'):
@@ -197,15 +210,22 @@ if __name__ == '__main__':
 			print(e.filename,':',e.strerror,'.')
 		exit(1)
 	if rslt[1]:
-		if rslt[0].lower() == 'qgphjd':
-			print('Solved:',rslt[0])
+		print("String returned!")
+		print("Checking if string is cuobx...")
+		if rslt[0].lower() == 'cuobx':
+			print('String is cuobx!!!')
 			try:
+				print('Sending positive correct-feedback!')
 				n.captcha_correct(True)
+				print('[!DONE!]')
 			except IOError:
 				pass
 		else:
-			print('Error:',rslt[0])
+			print('String is not qgphjd!!!')
+			print('Returned String:',rslt[0])
 			try:
+				print('Sending negative correct-feedback!')
 				n.captcha_correct(False)
+				print('[!DONE!]')
 			except IOError:
 				pass
