@@ -163,6 +163,7 @@ class py9kw:
 				self.rslt = (error_codes[i],False)
 				return
 		if self.verbose:
+			print("...[SUCCESS]")
 			print("[py9kw] Captcha resolved! String: '%s'" % self.string)
 		self.rslt = (self.string,True)
 		return
