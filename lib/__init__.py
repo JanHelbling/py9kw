@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-#    py9kw.py - A API for the Captcha-resolvingservice 9kw.eu
+#    py9kw.py - A API for the Captcha-solvingservice 9kw.eu
 #
 #    Copyright (C) 2014 by Jan Helbling <jan.helbling@gmail.com>
 #
