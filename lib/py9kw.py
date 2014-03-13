@@ -66,18 +66,21 @@ class py9kw:
 		self.verbose	=	verbose
 		self.apikey	=	apikey
 		self.captchaid	=	""
+		self.rslt	=	(False,False)
 		self.opener	=	urllib.request.build_opener()
 		self.opener.add_headers	=	[('User-Agent' , 'Python-urllib/3.x (py9kw-api)')]
 		urllib.request.install_opener(self.opener)
 	
-	def uploadcaptcha(self,imagedata,maxtimeout=60):
+	def uploadcaptcha(self,imagedata,maxtimeout=60,prio=5):
 		"""Upload the Captcha base64 encoded to 9kw.eu (gif/jpg/png)."""
 		self.maxtimeout	=	maxtimeout
+		self.prio	=	prio
 		self.imagedata	=	b64encode(imagedata)
 		self.data	=	{
 			'action' : 'usercaptchaupload',
 			'apikey' : self.apikey,
 			'file-upload-01' : self.imagedata,
+			'prio'   : str(self.prio),
 			'base64' : '1',
 			'maxtimeout' : str(self.maxtimeout),
 			'source' : 'py9kw-api'
@@ -108,12 +111,20 @@ class py9kw:
 		self.counter	=	self.maxtimeout
 		if time == 0:
 			for i in range(1,9):
+				self.getresult()
+				if self.rslt[1]:
+					break
+				else:
+					print("...%s" % self.rslt[0])
 				self.counter	=	self.counter - (self.maxtimeout / 10)
 				if self.verbose:
 					print("[py9kw] Sleep..Zzzzz... %ds" % self.counter)
 				sleep(self.maxtimeout / 10)
 		else:
 			for i in range(1,9):
+				self.getresult()
+				if self.rslt[1]:
+					break
 				self.counter	=	self.counter - (time / 10)
 				if self.verbose:
 					print("[py9kw] Sleep..Zzzzz... %ds" % (time / 10))
@@ -131,23 +142,30 @@ class py9kw:
 			'source'	: 'py9kw-api'
 		}
 		if self.verbose:
-			print("[py9kw] Try to get the result from 9kw.eu...")
+			print("[py9kw] Try to get the result from 9kw.eu...",end="")
 		self.string	=	(urllib.request.urlopen('%s?%s' % (webservice_url,urlencode(self.data))).read()).decode('utf-8')
 		if self.string == 'NO DATA':
-			return 'No Data!',False
+			self.rslt = ('No Data!',False)
+			return
+		elif self.string == 'ERROR NO USER':
+			self.rslt = ('Not enough users!',False)
+			return
 		for i in range(10,30):
 			if '00%d' % i in self.string:
 				if self.verbose:
 					print("Error %d:" % i ,error_codes[i])
-				return error_codes[i],False
+				self.rslt = (error_codes[i],False)
+				return
 		for i in range(0,9):
 			if '000%d' % i in self.string:
 				if self.verbose:
 					print("Error: %d" % i,error_codes[i])
-				return error_codes[i],False
+				self.rslt = (error_codes[i],False)
+				return
 		if self.verbose:
 			print("[py9kw] Captcha resolved! String: '%s'" % self.string)
-		return self.string,True
+		self.rslt = (self.string,True)
+		return
 	
 	def captcha_correct(self,iscorrect):
 		"""Send feedback, is the Captcha wrong?"""
@@ -168,13 +186,13 @@ class py9kw:
 
 if __name__ == '__main__':
 	from sys import argv
-	if len(argv) != 2:
-		print('Usage:',argv[0],'<APIKEY>')
+	if len(argv) != 3:
+		print('Usage:',argv[0],'<APIKEY> <TIME TO RESOLVE>')
 		exit(0)
 	
 	# Get a Sample-Captcha
 	try:
-		print("Get a Samplecaptcha (=> http://jan-helbling.no-ip.biz/images/captcha.png string=cuobx)")
+		print("Get a Samplecaptcha from: 'http://jan-helbling.no-ip.biz/images/captcha.png'.")
 		image_data = urllib.request.urlopen('http://jan-helbling.no-ip.biz/images/captcha.png').read()
 	except IOError as e:
 		print('Error while get a SampleCaptcha from a website!')
@@ -188,7 +206,7 @@ if __name__ == '__main__':
 	
 	#Upload it
 	try:
-		n.uploadcaptcha(image_data,60)
+		n.uploadcaptcha(image_data,int(argv[2]),10)
 	except IOError as e:
 		print('Error while uploading the Captcha!')
 		if hasattr(e,'args'):
@@ -201,7 +219,8 @@ if __name__ == '__main__':
 	
 	#Get Result
 	try:
-		rslt = n.getresult()
+		if not n.rslt[1]:
+			n.getresult()
 	except IOError as e:
 		print('Error while getting the Result!')
 		if hasattr(e,'args'):
@@ -209,11 +228,11 @@ if __name__ == '__main__':
 		else:
 			print(e.filename,':',e.strerror,'.')
 		exit(1)
-	if rslt[1]:
+	if n.rslt[1]:
 		print("String returned!")
-		print("Checking if string is cuobx...")
-		if rslt[0].lower() == 'cuobx':
-			print('String is cuobx!!!')
+		print("Checking if string is CUOBX...")
+		if n.rslt[0].lower() == 'CUOBX':
+			print('String is CUOBX!!!')
 			try:
 				print('Sending positive correct-feedback!')
 				n.captcha_correct(True)
@@ -221,11 +240,14 @@ if __name__ == '__main__':
 			except IOError:
 				pass
 		else:
-			print('String is not qgphjd!!!')
-			print('Returned String:',rslt[0])
+			print('String is not CUOBX!!!')
+			print('Returned String:',n.rslt[0])
 			try:
 				print('Sending negative correct-feedback!')
 				n.captcha_correct(False)
 				print('[!DONE!]')
 			except IOError:
 				pass
+	else:
+		print("Error:",n.rslt[0])
+		exit(1)
