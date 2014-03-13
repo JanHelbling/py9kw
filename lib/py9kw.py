@@ -231,7 +231,7 @@ if __name__ == '__main__':
 	if n.rslt[1]:
 		print("String returned!")
 		print("Checking if string is CUOBX...")
-		if n.rslt[0].lower() == 'CUOBX':
+		if n.rslt[0].lower() == 'cuobx':
 			print('String is CUOBX!!!')
 			try:
 				print('Sending positive correct-feedback!')
