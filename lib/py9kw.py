@@ -214,9 +214,9 @@ if __name__ == '__main__':
 	
 	# Get a Sample-Captcha
 	try:
-		print('[py9kw-test] Get a samplecaptcha and string from: \'http://jan-helbling.no-ip.biz/images/(captcha.png|captcha.txt)\'...',end='')
-		image_data	=	urllib.request.urlopen('http://jan-helbling.no-ip.biz/images/captcha.png').read()
-		solved_string	= 	(urllib.request.urlopen('http://jan-helbling.no-ip.biz/images/captcha.txt').read()).decode('utf-8','ignore').rstrip("\r\n ")
+		print('[py9kw-test] Get a samplecaptcha and string from: \'http://www.jan-helbling.ch/images/(captcha.png|captcha.txt)\'...',end='')
+		image_data	=	urllib.request.urlopen('http://www.jan-helbling.ch/images/captcha.png').read()
+		solved_string	= 	(urllib.request.urlopen('http://www.jan-helbling.ch/images/captcha.txt').read()).decode('utf-8','ignore').rstrip("\r\n ")
 		print('...[OK]')
 	except IOError as e:
 		print('...[FAIL]')
