@@ -80,7 +80,8 @@ class py9kw:
 		if self.verbose:
 			print('[py9kw] Check if the imagedata is already base64 encoded...',end='')
 		if b64encode(b64decode(imagedata)) == imagedata:
-			print('...[YES, already encoded]')
+			if self.verbose:
+				print('...[YES, already encoded]')
 			self.imagedata	=	imagedata
 		else:
 			print('...[NO, encode it now]')
@@ -133,7 +134,8 @@ class py9kw:
 				if self.rslt[1]:
 					break
 				else:
-					print('...[%s]' % self.rslt[0])
+					if self.verbose:
+						print('...[%s]' % self.rslt[0])
 				self.counter	=	self.counter - (self.maxtimeout / 10)
 				if self.verbose:
 					print('[py9kw] Sleep..Zzzzz... %ds' % self.counter)
