@@ -103,7 +103,8 @@ class py9kw:
 		
 		self.captchaid	=	(urllib.request.urlopen(webservice_url,data=urlencode(self.data).encode('utf-8','ignore')).read()).decode('utf-8','ignore')
 		
-		print('...[DONE]')
+		if self.verbose:
+			print('...[DONE]')
 		
 		for i in range(10,30):
 			if '00%d' % i in self.captchaid:
