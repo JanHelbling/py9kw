@@ -84,7 +84,8 @@ class py9kw:
 				print('...[YES, already encoded]')
 			self.imagedata	=	imagedata
 		else:
-			print('...[NO, encode it now]')
+			if self.verbose:
+				print('...[NO, encode it now]')
 			self.imagedata	=	b64encode(imagedata)
 		self.data	=	{
 			'action' : 'usercaptchaupload',
