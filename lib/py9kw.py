@@ -209,7 +209,20 @@ class py9kw:
 		urllib.request.urlopen('%s?%s' % (webservice_url,urlencode(self.data))).read()
 		if self.verbose:
 			print('...[OK]')
-
+	
+	def getcredits(self):
+		"""Get aviable Credits..."""
+		if self.verbose:
+			print('[py9kw] Get aviable Credits...',end='')
+		self.data	=	{
+			'action' : 'usercaptchaguthaben',
+			'apikey' : self.apikey
+		}
+		self.rslt	=	int((urllib.request.urlopen('%s?%s' % (webservice_url,urlencode(self.data))).read()).decode('utf-8','ignore'))
+		if self.verbose:
+			print('...[{}]'.format(self.rslt))
+		return self.rslt
+		
 if __name__ == '__main__':
 	from sys import argv
 	if len(argv) != 3:
@@ -232,6 +245,12 @@ if __name__ == '__main__':
 		exit(1)
 	
 	n = py9kw(argv[1],True)
+	
+	credits = n.getcredits()
+	if credits < 8:
+		print('[py9kw-test] Not enough Credits! < 8')
+		exit(0)
+	print('[py9kw-test] Credits: {}'.format(credits))
 	
 	#Upload it
 	try:
