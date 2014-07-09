@@ -20,7 +20,7 @@
 
 import urllib.request
 from urllib.parse import urlencode
-
+from os import getenv
 from base64 import b64encode,b64decode
 from time import sleep
 
@@ -61,20 +61,33 @@ error_codes	=	{
 
 
 class py9kw:
-	def __init__(self,apikey,verbose=False):
+	def __init__(self,apikey,env_proxy=False,verbose=False):
 		"""Initialize py9kw with a APIKEY and Optional verbose mode.
 		Verbose mode will print each step to stdout."""
 		self.verbose	=	verbose
 		self.apikey	=	apikey
 		self.captchaid	=	''
 		self.rslt	=	(False,False)
-		self.opener	=	urllib.request.build_opener()
+		if env_proxy == True:
+			self.proxy		=	getenv('http_proxy')
+			if self.proxy == None:
+				self.proxyhdl	=	urllib.request.ProxyHandler({})
+				if self.verbose:
+					print("[py9kw] Warning: You have set env_proxy=True, but http_proxy is not set!")
+					print("[py9kw] I will countine without a Proxy.")
+			else:
+				self.proxyhdl	=	urllib.request.ProxyHandler({'http',self.proxy})
+				if self.verbose:
+					print("[py9kw] Loaded http_proxy => {}".format(self.proxy))
+		else:
+			self.proxyhdl		=	urllib.request.ProxyHandler({})
+		self.opener	=	urllib.request.build_opener(self.proxyhdl)
 		self.opener.add_headers	=	[('User-Agent' , 'Python-urllib/3.x (py9kw-api)')]
 		urllib.request.install_opener(self.opener)
 	
 	def uploadcaptcha(self,imagedata,maxtimeout=60,prio=5):
 		"""Upload the Captcha to 9kw.eu (gif/jpg/png)."""
-		print("Uploadcaptcha")
+		print("[py9kw] Uploading captcha...")
 		self.maxtimeout	=	maxtimeout
 		self.prio	=	prio
 		if self.verbose:
@@ -244,7 +257,7 @@ if __name__ == '__main__':
 			print('[py9kw-test]',e.filename,':',e.strerror,'.')
 		exit(1)
 	
-	n = py9kw(argv[1],True)
+	n = py9kw(argv[1],True,True)
 	
 	credits = n.getcredits()
 	if credits < 8:
