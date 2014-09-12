@@ -260,8 +260,8 @@ if __name__ == '__main__':
 	n = py9kw(argv[1],True,True)
 	
 	credits = n.getcredits()
-	if credits < 8:
-		print('[py9kw-test] Not enough Credits! < 8')
+	if credits < 10:
+		print('[py9kw-test] Not enough Credits! < 10')
 		exit(0)
 	print('[py9kw-test] Credits: {}'.format(credits))
 	
