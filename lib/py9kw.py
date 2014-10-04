@@ -23,42 +23,78 @@ from urllib.parse import urlencode
 from os import getenv
 from base64 import b64encode,b64decode
 from time import sleep
+from locale import getdefaultlocale
 
 webservice_url	=	'https://www.9kw.eu/index.cgi'
 
-error_codes	=	{
-	1  : 'Kein API Key vorhanden.',
-	2  : 'Kein API Key gefunden.',
-	3  : 'Keinen aktiven API Key gefunden.',
-	4  : 'API Key wurde vom Betreiber deaktiviert.',
-	5  : 'Kein User gefunden.',
-	6  : 'Keine Daten gefunden.',
-	7  : 'Keine ID gefunden.',
-	8  : 'Kein Captcha gefunden.',
-	9  : 'Kein Bild gefunden.',
-	10 : 'Bildgrösse nicht erlaubt.',
-	11 : 'Guthaben ist nicht ausreichend.',
-	12 : 'Bereits erledigt.',
-	13 : 'Keine Antwort enthalten.',
-	14 : 'Captcha bereits beantwortet.',
-	15 : 'Captcha zu schnell eingereicht.',
-	16 : 'JD Check aktiv.',
-	17 : 'Unbekanntes Problem.',
-	18 : 'Keine ID gefunden.',
-	19 : 'Fehlerhafte Antwort.',
-	20 : 'Nicht rechtzeitig eingereicht (Falsche UserID).',
-	21 : 'Link nicht erlaubt.',
-	22 : 'Einreichen verboten.',
-	23 : 'Eingeben verboten.',
-	24 : 'Zu wenig Guthaben.',
-	25 : 'Keine Eingabe gefunden.',
-	26 : 'Keine AGB akzeptiert.',
-	27 : 'Keinen Gutscheincode in der Datenbank gefunden.',
-	28 : 'Bereits genutzter Gutscheincode.',
-	29 : 'Maxtimeout unter 60 Sekunden.',
-	30 : 'User nicht gefunden.'
-}
+locale		=	getdefaultlocale()[0]
 
+if 'de' in locale.lower():
+	error_codes	=	{
+		1  : 'Kein API Key vorhanden.',
+		2  : 'Kein API Key gefunden.',
+		3  : 'Keinen aktiven API Key gefunden.',
+		4  : 'API Key wurde vom Betreiber deaktiviert.',
+		5  : 'Kein User gefunden.',
+		6  : 'Keine Daten gefunden.',
+		7  : 'Keine ID gefunden.',
+		8  : 'Kein Captcha gefunden.',
+		9  : 'Kein Bild gefunden.',
+		10 : 'Bildgrösse nicht erlaubt.',
+		11 : 'Guthaben ist nicht ausreichend.',
+		12 : 'Bereits erledigt.',
+		13 : 'Keine Antwort enthalten.',
+		14 : 'Captcha bereits beantwortet.',
+		15 : 'Captcha zu schnell eingereicht.',
+		16 : 'JD Check aktiv.',
+		17 : 'Unbekanntes Problem.',
+		18 : 'Keine ID gefunden.',
+		19 : 'Fehlerhafte Antwort.',
+		20 : 'Nicht rechtzeitig eingereicht (Falsche UserID).',
+		21 : 'Link nicht erlaubt.',
+		22 : 'Einreichen verboten.',
+		23 : 'Eingeben verboten.',
+		24 : 'Zu wenig Guthaben.',
+		25 : 'Keine Eingabe gefunden.',
+		26 : 'Keine AGB akzeptiert.',
+		27 : 'Keinen Gutscheincode in der Datenbank gefunden.',
+		28 : 'Bereits genutzter Gutscheincode.',
+		29 : 'Maxtimeout unter 60 Sekunden.',
+		30 : 'User nicht gefunden.'
+	}
+else:
+	error_codes = {
+		1: 'No API Key available.' ,
+		2: 'No API key found.',
+		3: 'No active API key found.',
+		4: 'API Key has been disabled by the operator. ',
+		5: 'No user found.',
+		6: 'No data found.',
+		7: 'Found No ID.',
+		8: 'found No captcha.',
+		9: 'No image found.',
+		10: 'Image size not allowed.',
+		11: 'credit is not sufficient.',
+		12: 'what was done.',
+		13: 'No answer contain.',
+		14: 'Captcha already been answered.',
+		15: 'Captcha to quickly filed.',
+		16: 'JD check active.',
+		17: 'Unknown problem.',
+		18: 'Found No ID.',
+		19: 'Incorrect answer.',
+		20: 'Do not timely filed (Incorrect UserID).',
+		21: 'Link not allowed.',
+		22: 'Prohibited submit.',
+		23: 'Entering prohibited.',
+		24: 'Too little credit.',
+		25: 'No entry found.',
+		26: 'No Conditions accepted.',
+		27: 'No coupon code found in the database.',
+		28: 'Already unused voucher code.',
+		29: 'maxTimeout under 60 seconds.',
+		30: 'User not found.'
+	}
 
 class py9kw:
 	def __init__(self,apikey,env_proxy=False,verbose=False):
