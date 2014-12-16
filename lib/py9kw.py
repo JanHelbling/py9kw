@@ -280,9 +280,8 @@ if __name__ == '__main__':
 	
 	# Get a Sample-Captcha
 	try:
-		print('[py9kw-test] Get a samplecaptcha and string from: \'http://www.jan-helbling.ch/images/(captcha.png|captcha.txt)\'...',end='')
-		image_data	=	urllib.request.urlopen('http://www.jan-helbling.ch/images/captcha.png').read()
-		solved_string	= 	(urllib.request.urlopen('http://www.jan-helbling.ch/images/captcha.txt').read()).decode('utf-8','ignore').rstrip("\r\n ")
+		print('[py9kw-test] Get a samplecaptcha and string from: \'http://www.jan-helbling.ch/~jhelbling/captcha.jpg\'...',end='')
+		image_data	=	urllib.request.urlopen('http://www.jan-helbling.ch/~jhelbling/captcha.jpg').read()
 		print('...[OK]')
 	except IOError as e:
 		print('...[FAIL]')
@@ -327,8 +326,8 @@ if __name__ == '__main__':
 		exit(1)
 	if n.rslt[1]:
 		print('[py9kw-test] String returned!')
-		print('[py9kw-test] Checking if the received string is %s...' % solved_string,end='')
-		if n.rslt[0].lower() == solved_string.lower():
+		print('[py9kw-test] Checking if the received string is "smwm"...',end='')
+		if n.rslt[0].lower() == "smwm":
 			print('...[PASS]')
 			try:
 				n.captcha_correct(True)
