@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
 #
 #    py9kw.py - A API for the Captcha-solvingservice 9kw.eu
 #
