@@ -1,9 +1,9 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 from distutils.core import setup
 
 setup(name='py9kw',
-      version='1.0',
+      version='1.1',
       description='Captcharesolvingservice 9kw.eu - API',
       author='Jan Helbling',
       author_email='jan.helbling@gmail.com',

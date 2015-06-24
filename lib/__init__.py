@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 #
 #    py9kw.py - A API for the Captcha-solvingservice 9kw.eu
 #
