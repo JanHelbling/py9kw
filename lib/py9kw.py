@@ -124,10 +124,10 @@ class py9kw:
 	
 	def uploadcaptcha(self,imagedata,maxtimeout=60,prio=5):
 		"""Upload the Captcha to 9kw.eu (gif/jpg/png)."""
-		print("[py9kw] Uploading captcha...")
 		self.maxtimeout	=	maxtimeout
 		self.prio	=	prio
 		if self.verbose:
+			print("[py9kw] Uploading captcha...")
 			print('[py9kw] Check if the imagedata is already base64 encoded...',end='')
 		if b64encode(b64decode(imagedata)) == imagedata:
 			if self.verbose:
