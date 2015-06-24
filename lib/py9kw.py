@@ -162,13 +162,11 @@ class py9kw:
 			if '00%d' % i in self.captchaid:
 				if self.verbose:
 					print('[py9kw] Error %d: %s' % (i,error_codes[i]))
-					exit(1)
 				return error_codes[i],False
 		for i in range(0,9):
 			if '000%d' % i in self.captchaid:
 				if self.verbose:
 					print('[py9kw] Error: %d: %s' % (i,error_codes[i]))
-					exit(1)
 				return error_codes[i],False
 		
 		if self.verbose:
@@ -281,12 +279,12 @@ if __name__ == '__main__':
 	
 	# Get a Sample-Captcha
 	try:
-		print('[py9kw-test] Get a samplecaptcha and string from: \'http://www.jan-helbling.ch/~jhelbling/captcha.jpg\'...',end='')
-		image_data	=	urllib.request.urlopen('http://www.jan-helbling.ch/~jhelbling/captcha.jpg').read()
+		print('[py9kw-test] Get a samplecaptcha from: \'confluence.atlassian.com\'...',end='')
+		image_data	=	urllib.request.urlopen('https://confluence.atlassian.com/download/attachments/216957808/captcha.png?version=1&modificationDate=1272411042125&api=v2').read()
 		print('...[OK]')
 	except IOError as e:
 		print('...[FAIL]')
-		print('[py9kw-test] Error while getting a SampleCaptcha from my Website!')
+		print('[py9kw-test] Error while getting a SampleCaptcha from a Website!')
 		if hasattr(e,'args'):
 			print('[py9kw-test]',e.args[0])
 		else:
