@@ -19,7 +19,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import urllib.request
+import urllib.request,binascii
 from urllib.parse import urlencode
 from os import getenv
 from base64 import b64encode,b64decode
@@ -129,13 +129,16 @@ class py9kw:
 		if self.verbose:
 			print("[py9kw] Uploading captcha...")
 			print('[py9kw] Check if the imagedata is already base64 encoded...',end='')
-		if b64encode(b64decode(imagedata)) == imagedata:
-			if self.verbose:
-				print('...[YES, already encoded]')
-			self.imagedata	=	imagedata
-		else:
-			if self.verbose:
-				print('...[NO, encode it now]')
+		try:
+			if b64encode(b64decode(imagedata)) == imagedata:
+				if self.verbose:
+					print('...[YES, already encoded]')
+				self.imagedata	=	imagedata
+			else:
+				if self.verbose:
+					print('...[NO, encode it now]')
+				self.imagedata	=	b64encode(imagedata)
+		except binascii.Error as e:
 			self.imagedata	=	b64encode(imagedata)
 		self.data	=	{
 			'action' : 'usercaptchaupload',
@@ -326,7 +329,7 @@ if __name__ == '__main__':
 	if n.rslt[1]:
 		print('[py9kw-test] String returned!')
 		print('[py9kw-test] Checking if the received string is "smwm"...',end='')
-		if n.rslt[0].lower() == "smwm":
+		if n.rslt[0].lower() == "viearer":
 			print('...[PASS]')
 			try:
 				n.captcha_correct(True)
