@@ -19,7 +19,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import urllib,urllib2
+import urllib,urllib2,binascii
 from os import getenv
 from base64 import b64encode,b64decode
 from time import sleep
@@ -129,13 +129,16 @@ class py9kw:
 		self.prio	=	prio
 		if self.verbose:
 			print '[py9kw] Check if the imagedata is already base64 encoded...'
-		if b64encode(b64decode(imagedata)) == imagedata:
-			if self.verbose:
-				print '...[YES, already encoded]'
-			self.imagedata	=	imagedata
-		else:
-			if self.verbose:
-				print '...[NO, encode it now]'
+		try:
+			if b64encode(b64decode(imagedata)) == imagedata:
+				if self.verbose:
+					print '...[YES, already encoded]'
+				self.imagedata	=	imagedata
+			else:
+				if self.verbose:
+					print '...[NO, encode it now]'
+				self.imagedata	=	b64encode(imagedata)
+		except binascii.Error as e:
 			self.imagedata	=	b64encode(imagedata)
 		self.data	=	{
 			'action' : 'usercaptchaupload',
