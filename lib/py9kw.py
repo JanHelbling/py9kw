@@ -328,7 +328,7 @@ if __name__ == '__main__':
 		exit(1)
 	if n.rslt[1]:
 		print('[py9kw-test] String returned!')
-		print('[py9kw-test] Checking if the received string is "smwm"...',end='')
+		print('[py9kw-test] Checking if the received string is "viearer"...',end='')
 		if n.rslt[0].lower() == "viearer":
 			print('...[PASS]')
 			try:
