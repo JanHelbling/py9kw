@@ -34,4 +34,4 @@ step3|  sleep(self, time=0)
 step2|  uploadcaptcha(self, imagedata, maxtimeout=60)
      |      Upload the Captcha base64 encoded to 9kw.eu. (gif/jpg/png)
 
-DONATE BITCOIN: 1FkfNLJsRm4NfXRxdUC74PHZtRb3i6YHF6
+DONATE BITCOIN: 1F8HiBCRndFq5pbVQrbr8tGAT3JHxpPsxF
