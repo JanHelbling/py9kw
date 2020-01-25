@@ -26,9 +26,7 @@ import re
 import time
 import urllib.request
 from base64 import b64encode, b64decode
-from locale import getdefaultlocale
 from os import getenv
-from time import sleep
 from urllib.parse import urlencode
 
 
@@ -36,7 +34,8 @@ def printInfo(msg):
     print('[py9kw] %s' % msg)
 
 
-webservice_url = 'https://www.9kw.eu/index.cgi'
+# See API docs: https://www.9kw.eu/api.html
+API_BASE = 'https://www.9kw.eu/index.cgi'
 # Parameter used as 'source' in all API requests
 API_SOURCE = 'py9kw-api'
 # Values according to website 2020-01-25
@@ -48,17 +47,19 @@ PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA = 10
 
 
 class Py9kw:
-    """Initialize py9kw with a APIKEY and Optional verbose mode.
-    Verbose mode will print each step to stdout."""
 
     def __init__(self, apikey, env_proxy=False, verbose=False):
+        """Initialize py9kw with a APIKEY and Optional verbose mode.
+        Verbose mode will print each step to stdout."""
         self.verbose = verbose
+        self.prio = PARAM_MIN_PRIO
+        self.maxtimeout = PARAM_MIN_MAXTIMEOUT
         self.apikey = apikey
-        self.captchaid = ''
+        self.captchaid = -1
         self.credits = -1
+        # Custom errors: 600"ERROR NO USER", 666"Error while parsing error number and message"
         self.errorint = -1
         self.errormsg = None
-        self.rslt = (False, False)
         if env_proxy:
             self.proxy = getenv('http_proxy')
             if self.proxy is None:
@@ -78,25 +79,30 @@ class Py9kw:
 
     # Checks for errors in json response and returns error_code(int) and error_message(String) separated as API returns them both in one String.
     def checkError(self, response, showStatus):
-        error = response.get('error', None)
-        errorMsg = None
-        errorInt = -1
-        if error is not None:
+        error_plain = response.get('error', None)
+        if error_plain is not None:
+            # Error found
             if self.verbose or showStatus:
-                printInfo('Found error: %s' % error)
+                printInfo('[checkError] Found error: Plain error: %s' % error_plain)
             try:
-                error_MatchObject = re.compile(r'^(\d{4}) (.+)').search(error)
-                self.errorInt = int(error_MatchObject.group(1))
-                self.errorMsg = error_MatchObject.group(2)
+                error_MatchObject = re.compile(r'^(\d{4}) (.+)').search(error_plain)
+                self.errorint = int(error_MatchObject.group(1))
+                self.errormsg = error_MatchObject.group(2)
+                if self.verbose or showStatus:
+                    printInfo('[checkError] Found error: Number: %d | Message: %s' % (self.errorint, self.errormsg))
             except:
                 # This should never happen
-                errorMsg = 'Error while parsing error message'
-                printInfo(errorMsg)
-                errorInt = 666
+                self.errormsg = 'Error while parsing error number and message'
+                self.errorint = 666
+                printInfo(self.errormsg)
         else:
+            # No error found
             if self.verbose or showStatus:
-                printInfo('Ok')
-        return self.errorInt, self.errorMsg
+                printInfo('[checkError] OK - NO ERROR')
+            # Reset error state
+            self.errorint = -1
+            self.errormsg = None
+        return self.errorint, self.errormsg
 
     def setPriority(self, prio):
         if prio < PARAM_MIN_PRIO:
@@ -124,9 +130,9 @@ class Py9kw:
             maxtimeout = PARAM_MAX_MAXTIMEOUT
         self.maxtimeout = maxtimeout
 
-    """Upload the Captcha to 9kw.eu (gif/jpg/png)."""
-
     def uploadcaptcha(self, imagedata, maxtimeout=None, prio=None):
+        """Upload the Captcha to 9kw.eu (gif/jpg/png)."""
+        # TODO: Add ability to define custom fields for getdata because even though this class is only designed to handle normal picture captchas, it is possible to specify more details of the captcha we're sending.
         if maxtimeout is not None:
             self.setTimeout(maxtimeout)
         if prio is not None:
@@ -134,7 +140,7 @@ class Py9kw:
         if self.verbose:
             printInfo("Uploading captcha...")
         if self.credits > -1 and self.credits < PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA:
-            print('Not enough credits to solve a captcha')
+            printInfo('Not enough credits to solve a captcha')
             return None
         try:
             printInfo('Check if the imagedata is already base64 encoded...')
@@ -146,7 +152,6 @@ class Py9kw:
                 if self.verbose:
                     printInfo('...[NO, encode it now]')
                 imagedata = b64encode(imagedata)
-                print('Still alive')
         except binascii.Error as e:
             imagedata = b64encode(imagedata)
         getdata = {
@@ -157,46 +162,38 @@ class Py9kw:
             'base64': '1',
             'maxtimeout': str(self.maxtimeout),
             'source': API_SOURCE,
+            'json': '1'
             #			'selfsolve' : '1',	# For debugging, it's faster.
             #			'nomd5' : '1'		# always send a new imageid
         }
 
         if self.verbose:
-            printInfo('Priority: %d of 10, Maxtimeout: %d of 3999s (MAXIMUM)' % (self.prio, self.maxtimeout))
+            printInfo('Priority: %d of 10, Maxtimeout: %d of 3999s' % (self.prio, self.maxtimeout))
             printInfo('Upload %d bytes to 9kw.eu...' % len(imagedata))
-
-        self.captchaid = '130452138'
-        if True:
-            return self.captchaid
-        response = json.loads(
-            urllib.request.urlopen('%s?%s' % (webservice_url, urlencode(getdata))).read().decode('utf-8', 'ignore'))
-        self.captchaid = response['captchaid']
-        errorInt, errorMsg = self.checkError(self, response, True)
-        if errorInt > -1:
+        json_plain = urllib.request.urlopen('%s?%s' % (API_BASE, urlencode(getdata))).read().decode('utf-8', 'ignore')
+        print('json debug: ' + json_plain)
+        response = json.loads(json_plain)
+        self.checkError(response, True)
+        self.captchaid = int(response.get('captchaid', -1))
+        if self.errorint > -1 or self.captchaid == -1:
             printInfo('Error ...')
             return None
         if self.verbose:
             printInfo('...[DONE]')
-
         if self.verbose:
-            printInfo('Uploaded => Captcha-id:', self.captchaid)
+            printInfo('Uploaded => Captcha-id: %d' % self.captchaid)
         return self.captchaid
 
-    """Wait until the Captcha is solved and return result."""
-
-    def sleepAndGetResult(self):
-        return self.sleepAndGetResult(self, self.maxtimeout)
-
-    """Wait until the Captcha is solved and return result."""
-
     def sleepAndGetResult(self, custom_timeout=None):
-        if self.verbose:
-            printInfo('Waiting until the Captcha is solved or maxtimeout has expired.')
+        """Wait until the Captcha is solved and return result."""
         total_timeout = None
         if custom_timeout is not None and custom_timeout >= PARAM_MIN_MAXTIMEOUT:
             total_timeout = custom_timeout
         else:
             total_timeout = self.maxtimeout
+        if self.verbose:
+            printInfo('Waiting until the Captcha is solved or maxtimeout %d has expired ...' % total_timeout)
+        total_time_waited = 0
         wait_seconds_inbetween = 10
         maxloops = int(total_timeout / 10)
         printInfo('Waiting for captcha result')
@@ -206,17 +203,24 @@ class Py9kw:
             result = self.getresult()
             if result is not None:
                 # We've reached our goal :)
+                print('Total time waited for result: %d' % total_time_waited)
                 return result
+            # This is the only case where we should retry: {"answer":"NO DATA","message":"OK","nodata":1,"status":{"success":true,"https":1},"info":1}
+            if self.errorint > -1:
+                # The only error for which we don't have to 'give up': "0012 Bereits erledigt. / Already done." --> Will be ignored anyways as a result will be available!
+                print('Error happened --> Giving up')
+                break
             if self.verbose:
                 printInfo('Waiting %d seconds' % wait_seconds_inbetween)
             time.sleep(wait_seconds_inbetween)
+            total_time_waited += wait_seconds_inbetween
 
         printInfo('Time expired! Failed to find result!')
         return None
 
-    """Get result from 9kw.eu. Use sleepAndGetResult for auto-wait handling! """
-
-    def getresult(self):
+    def getresult(self) -> str:  # https://stackoverflow.com/questions/42127461/pycharm-function-doesnt-return-anything
+        """Get result from 9kw.eu. Use sleepAndGetResult for auto-wait handling! """
+        answer = None
         getdata = {
             'action': 'usercaptchacorrectdata',
             'id': self.captchaid,
@@ -227,38 +231,51 @@ class Py9kw:
         }
         if self.verbose:
             printInfo('Try to fetch the solved result from 9kw.eu...')
-        response = json.loads(
-            (urllib.request.urlopen('%s?%s' % (webservice_url, urlencode(getdata))).read()).decode('utf-8', 'ignore'))
-        errorInt, errorMsg = self.checkError(response, True)
-        # TODO: Improve this
-        result = response.get('answer', None)
-        if result is not None and result == 'NO DATA':
-            printInfo('No Data received!')
-            return None
-        elif result is not None and result == 'ERROR NO USER':
-            printInfo('No users there to solve at this moment')
-            return None
-
-        if errorInt > -1:
-            printInfo('Error %d: %s' % (errorInt, errorMsg))
-            return None
-        # elif errorInt == 5:
-        #     self.rslt = ('Not enough users Online who solve the Captchas!', False)
-        #     return
+        plain_json = urllib.request.urlopen('%s?%s' % (API_BASE, urlencode(getdata))).read().decode('utf-8', 'ignore')
         if self.verbose:
-            printInfo('[SUCCESS]')
-            printInfo('Captcha solved! String: \'%s\'' % result)
-        return result
+            printInfo(plain_json)
+        response = json.loads(plain_json)
+        self.checkError(response, True)
+        # TODO: Add errorhandling
+        answer = response.get('answer', None)
+        nodata = response.get('nodata', -1)
+        if nodata == 1:
+            printInfo('No answer yet')
+            return None
+        elif answer is not None and answer == 'ERROR NO USER':
+            # Special: We need to set an error to make sure that our sleep handling would stop!
+            self.errorint = 600
+            self.errormsg = 'ERROR NO USER'
+            printInfo('No users there to solve at this moment --> Or maybe your timeout is too small')
+            return None
+        elif self.errorint > -1:
+            printInfo('Error %d: %s' % (self.errorint, self.errormsg))
+            return None
+        if answer is None:
+            # This should never happen
+            if self.verbose:
+                printInfo('[FAILURE] --> Unknown failure')
+        else:
+            if self.verbose:
+                printInfo('[SUCCESS]')
+                printInfo('Captcha solved! String: \'%s\'' % answer)
+        return answer
 
     def captcha_correct(self, iscorrect):
         """Send feedback, is the Captcha result correct?"""
+        if self.verbose:
+            printInfo('Sending captcha solved feedback ...')
+        if self.captchaid is None or self.captchaid == -1:
+            # This should only happen on wrong usage
+            printInfo('Cannot send captcha feedback because captchaid is not given')
+            return
         if iscorrect:
             if self.verbose:
-                printInfo('Sending feedback that the \'solved\' captcha was right...')
+                printInfo('Sending POSITIVE captcha solved feedback ...')
             correct = '1'
         else:
             if self.verbose:
-                printInfo('Sending feedback that the \'solved\' captcha was wrong...')
+                printInfo('Sending NEGATIVE captcha solved feedback ...')
             correct = '2'
         getdata = {
             'action': 'usercaptchacorrectback',
@@ -270,9 +287,9 @@ class Py9kw:
         }
         try:
             response = json.loads(
-                urllib.request.urlopen('%s?%s' % (webservice_url, urlencode(getdata))).read().decode('utf-8', 'ignore'))
+                urllib.request.urlopen('%s?%s' % (API_BASE, urlencode(getdata))).read().decode('utf-8', 'ignore'))
             # Check for errors but do not handle them. If something does wrong here it is not so important!
-            errorInt, errorMsg = self.checkError(self, response, True)
+            self.checkError(response, True)
         except:
             printInfo('Error in captcha_correct')
         return
@@ -287,18 +304,19 @@ class Py9kw:
             'source': API_SOURCE,
             'json': '1'
         }
+
         response = json.loads(
-            urllib.request.urlopen('%s?%s' % (webservice_url, urlencode(getdata))).read().decode('utf-8', 'ignore'))
-        errorInt, errorMsg = self.checkError(response, False)
-        if errorInt > -1:
-            printInfo('Error: %s' % errorMsg)
-            return errorInt
+            urllib.request.urlopen('%s?%s' % (API_BASE, urlencode(getdata))).read().decode('utf-8', 'ignore'))
+        self.checkError(response, False)
+        if self.errorint > -1:
+            printInfo('Error: %s' % self.errormsg)
+            return None
         usercredits = response.get('credits', -1)
         if self.verbose:
             printInfo('%d credits available --> Enough to solve approximately %d captchas' % (
                 usercredits, (usercredits / PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA)))
         self.credits = usercredits
-        return usercredits
+        return self.credits
 
 
 if __name__ == '__main__':
@@ -309,6 +327,7 @@ if __name__ == '__main__':
         exit(0)
 
     # Get a Sample-Captcha
+    image_data = None
     try:
         print('[py9kw-test] Get a samplecaptcha from: \'confluence.atlassian.com\'...')
         image_data = urllib.request.urlopen(
@@ -325,11 +344,11 @@ if __name__ == '__main__':
 
     n = Py9kw(argv[1], True, True)
 
-    credits = n.getcredits()
-    if credits < PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA:
+    testcredits = n.getcredits()
+    if testcredits < PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA:
         print('[py9kw-test] Not enough Credits! < %d' % PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA)
         exit(0)
-    print('[py9kw-test] Credits: {}'.format(credits))
+    print('[py9kw-test] Credits: {}'.format(testcredits))
 
     # Upload it
     try:

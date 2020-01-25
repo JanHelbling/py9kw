@@ -22,14 +22,11 @@ class py9kw(builtins.object)
 step1|  __init__(self, apikey, verbose=False)
      |      Initialize py9kw with a APIKEY.
      |  
-step5|  captcha_correct(self, iscorrect)
-     |      Send feedback, is the Captcha wrong?
+step4|  captcha_correct(self, iscorrect)
+     |      Send feedback, is the Captcha answer wrong?
      |  
-step4|  getresult(self)
-     |      Get result from 9kw.eu.
-     |  
-step3|  sleep(self, time=0)
-     |      Wait until the Captcha is resolved.
+step3|  sleepAndGetResult(self)
+     |      Wait until the Captcha is solved and get the result
      |  
 step2|  uploadcaptcha(self, imagedata, maxtimeout=60)
      |      Upload the Captcha base64 encoded to 9kw.eu. (gif/jpg/png)
