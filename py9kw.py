@@ -55,7 +55,7 @@ class Py9kw:
         self.prio = PARAM_MIN_PRIO
         self.maxtimeout = PARAM_MIN_MAXTIMEOUT
         self.apikey = apikey
-        self.captchaid = ''
+        self.captchaid = -1
         self.credits = -1
         # Custom errors: 600"ERROR NO USER", 666"Error while parsing error number and message"
         self.errorint = -1
@@ -263,13 +263,19 @@ class Py9kw:
 
     def captcha_correct(self, iscorrect):
         """Send feedback, is the Captcha result correct?"""
+        if self.verbose:
+            printInfo('Sending captcha solved feedback ...')
+        if self.captchaid is None or self.captchaid == -1:
+            # This should only happen on wrong usage
+            printInfo('Cannot send captcha feedback because captchaid is not given')
+            return
         if iscorrect:
             if self.verbose:
-                printInfo('Sending feedback that the \'solved\' captcha was right...')
+                printInfo('Sending POSITIVE captcha solved feedback ...')
             correct = '1'
         else:
             if self.verbose:
-                printInfo('Sending feedback that the \'solved\' captcha was wrong...')
+                printInfo('Sending NEGATIVE captcha solved feedback ...')
             correct = '2'
         getdata = {
             'action': 'usercaptchacorrectback',
