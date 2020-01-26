@@ -249,7 +249,7 @@ class Py9kw:
                 print('Total seconds waited for result: %d' % total_time_waited)
                 return result, self.errorint, self.errormsg
             # This is the only case where we should retry: {"answer":"NO DATA","message":"OK","nodata":1,"status":{"success":true,"https":1},"info":1}
-            if self.errorint > -1:
+            if self.errorint > -1 and self.errorint != 603:
                 # The only error for which we don't have to 'give up': "0012 Bereits erledigt. / Already done." --> Will be ignored anyways as a result will be available!
                 print('Error happened --> Giving up')
                 break
@@ -285,21 +285,24 @@ class Py9kw:
         nodata = response.get('nodata', -1)
         if nodata == 1:
             printInfo('No answer yet')
-            return None
+            self.errorint = 603
+            self.errormsg = 'NO_ANSWER_YET'
+            return None, self.errorint, self.errormsg
         elif answer is not None and answer == 'ERROR NO USER':
             # Special: We need to set an error to make sure that our sleep handling would stop!
             self.errorint = 600
             self.errormsg = 'ERROR_NO_USER'
             printInfo('No users there to solve at this moment --> Or maybe your timeout is too small')
-            return None
+            return None, self.errorint, self.errormsg
         elif self.errorint > -1:
             printInfo('Error %d: %s' % (self.errorint, self.errormsg))
             return None, self.errorint, self.errormsg
-        if answer is None:
-            # This should never happen
+        elif answer is None:
+            # Answer is not given but also we did not get any errormessage
             if self.verbose:
-                printInfo('[FAILURE] --> Unknown failure')
+                printInfo('[FAILURE] --> Failed to find answer --> Unknown failure')
         else:
+            # Answer is given
             if self.verbose:
                 printInfo('[SUCCESS]')
                 printInfo('Captcha solved! String: \'%s\'' % answer)
