@@ -43,7 +43,8 @@ sys.exit(0)
 ```
 ### Possible errorcodes
 Most of all possible errorcodes with their corresponding errormessages are listed in the API docs: https://www.9kw.eu/api.html
-For this reason only the errorcodes which are only returned by this lib will be listed here.
+
+**For this reason only the errorcodes which are only returned by this lib will be listed here (with one exception).**
 
 Errorcode | Explanation
 --- | ---
