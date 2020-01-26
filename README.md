@@ -51,7 +51,7 @@ Errorcode | Explanation
 600 | ERROR_NO_USER This happens when there are no users to solve and the timeout of the uploaded captcha ran out. Example API json: {"status":{"https":1,"success":true},"message":"OK","answer":"ERROR NO USER"}
 601 | CAPTCHA_DOWNLOAD_FAILURE This may happen before a captcha gets sent to 9kw if the provided URL is e.g. offline or returns an http error status.
 602 | ERROR_TIMEOUT Basically the same as 600 but in this case, the internal timout happened before the Server timeout happened.
-603 | NO_ANSWER_YET No captcha result available yet. This is the only case in which sleepAndGetResult is allowed to retry.
+603 | NO_ANSWER_YET No captcha result available yet. This is the only case in which sleepAndGetResult is allowed to retry. Example API json: {"answer":"NO DATA","message":"OK","nodata":1,"status":{"success":true,"https":1},"info":1}
 666 | Error while parsing error number and message --> This should never happen
 0012 | **Special case returned by API: 0012 Bereits erledigt.** This will return an errorcode along with a (correct)captcha result!
 
