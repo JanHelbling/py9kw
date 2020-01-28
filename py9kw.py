@@ -40,8 +40,9 @@ API_BASE = 'https://www.9kw.eu/index.cgi'
 # Parameter used as 'source' in all API requests
 API_SOURCE = 'py9kw-api'
 # Values according to website 2020-01-25
-PARAM_MIN_PRIO = 1
 PARAM_MAX_PRIO = 20
+# -1 or 0 = do not send 'prio' parameter at all.
+PARAM_DEFAULT_PRIO = -1
 PARAM_MIN_MAXTIMEOUT = 60
 PARAM_MAX_MAXTIMEOUT = 3999
 PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA = 10
@@ -53,12 +54,13 @@ class Py9kw:
         """Initialize py9kw with a APIKEY and Optional verbose mode.
         Verbose mode will print each step to stdout."""
         self.verbose = verbose
-        self.prio = PARAM_MIN_PRIO
+        self.prio = PARAM_DEFAULT_PRIO
         self.maxtimeout = PARAM_MIN_MAXTIMEOUT
         self.apikey = apikey
         self.captchaid = -1
         self.credits = -1
-        # Custom errors also possible e.g. 600 --> "ERROR NO USER" --> See README.md
+        self.extrauploaddata = None
+        # Custom errors also possible besides known API errorcodes e.g. 600 --> "ERROR_NO_USER" --> See README.md
         self.errorint = -1
         self.errormsg = None
         if env_proxy:
@@ -79,6 +81,11 @@ class Py9kw:
         urllib.request.install_opener(self.opener)
         if self.verbose:
             printInfo('Current cost for one captcha: %d' % self.getCaptchaCost())
+
+    def resetSolver(self):
+        """ Call this to reset all runtime values if you e.g. want to re-use a previously created solver instance while keeping your settings (prio, maxtimeout and so on).  """
+        self.captchaid = -1
+        return
 
     # Checks for errors in json response and returns error_code(int) and error_message(String) separated as API returns them both in one String.
     def checkError(self, response, showStatus):
@@ -115,17 +122,20 @@ class Py9kw:
         return captcha_cost
 
     def setPriority(self, prio):
-        if prio < PARAM_MIN_PRIO:
-            printInfo(
-                'Wished \'prio\' value %d is lower than lowest possible value %d --> Using lowest value %d instead' % (
-                    prio, PARAM_MIN_PRIO, PARAM_MIN_PRIO))
-            prio = PARAM_MIN_PRIO
-        elif prio > PARAM_MAX_PRIO:
+        if prio > PARAM_MAX_PRIO:
             printInfo(
                 'Wished \'prio\' value %d is higher than highest possible value %d --> Using highest value %d instead' % (
                     prio, PARAM_MAX_PRIO, PARAM_MAX_PRIO))
-            prio = PARAM_MAX_PRIO
-        self.prio = prio
+            self.prio = PARAM_MAX_PRIO
+        else:
+            # Either user defined prio value or default
+            self.prio = prio
+        return
+
+    def setAdditionalCaptchaUploadParams(self, uploaddata):
+        """ Use this to add extra captcha upload parameters such as: 'case-sensitive':'1'. Be sure to always use Strings! """
+        if uploaddata is not None:
+            self.extrauploaddata = uploaddata
         return
 
     def setTimeout(self, maxtimeout):
@@ -157,13 +167,13 @@ class Py9kw:
                 printInfo('[getCaptchaImageFromWebsite] [OK]')
         except IOError as e:
             printInfo('[getCaptchaImageFromWebsite] [FAIL]')
-            self.errorint = 601
+            self.errorint = 603
             self.errormsg = 'CAPTCHA_DOWNLOAD_FAILURE'
         return imagefile, self.errorint, self.errormsg
 
     def uploadcaptcha(self, imagedata, store_image_path=None, maxtimeout=None, prio=None):
         """Upload the Captcha to 9kw.eu (gif/jpg/png)."""
-        # TODO: Add ability to define custom fields for getdata because even though this class is only designed to handle normal picture captchas, it is possible to specify more details of the captcha we're sending.
+        # Step 1: Set optional parameters and check if user has enough credits
         if self.verbose:
             printInfo("Attempting to upload captcha...")
         if maxtimeout is not None:
@@ -173,6 +183,7 @@ class Py9kw:
         if self.credits > -1 and self.credits < PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA:
             printInfo('Not enough credits to solve a captcha')
             return None
+        # Step 2: Prepare image data we want to upload
         # First check if we have an URL --> Download image first
         if isinstance(imagedata, str) and validators.url(imagedata):
             if self.verbose:
@@ -194,12 +205,11 @@ class Py9kw:
                 imagedata = b64encode(imagedata)
         except binascii.Error as e:
             imagedata = b64encode(imagedata)
+        # Step 3: Prepare all other parameters we want to send
         getdata = {
             'action': 'usercaptchaupload',
             'apikey': self.apikey,
             'file-upload-01': imagedata,
-            # TODO: Update this to be able to completely leave out this field. Even prio=1 will use up one credit more per captcha than without using this param!
-            'prio': str(self.prio),
             'base64': '1',
             'maxtimeout': str(self.maxtimeout),
             'source': API_SOURCE,
@@ -207,7 +217,18 @@ class Py9kw:
             #			'selfsolve' : '1',	# For debugging, it's faster.
             #			'nomd5' : '1'		# always send a new imageid
         }
+        if self.prio > 0:
+            getdata['prio'] = prio
+            if self.verbose:
+                printInfo('Uploading captcha with prio %d' % self.prio)
+        else:
+            if self.verbose:
+                printInfo('Uploading captcha without prio')
+        if self.extrauploaddata is not None:
+            if self.verbose:
+                getdata.update(self.extrauploaddata)
 
+        # Step 4: Send data and return captchaid
         if self.verbose:
             printInfo('Priority: %d of 10, Maxtimeout: %d of 3999s' % (self.prio, self.maxtimeout))
             printInfo('Upload %d bytes to 9kw.eu...' % len(imagedata))
@@ -248,9 +269,8 @@ class Py9kw:
                 # We've reached our goal :)
                 print('Total seconds waited for result: %d' % total_time_waited)
                 return result, self.errorint, self.errormsg
-            # This is the only case where we should retry: {"answer":"NO DATA","message":"OK","nodata":1,"status":{"success":true,"https":1},"info":1}
-            if self.errorint > -1 and self.errorint != 603:
-                # The only error for which we don't have to 'give up': "0012 Bereits erledigt. / Already done." --> Will be ignored anyways as a result will be available!
+            if self.errorint > -1 and self.errorint != 602:
+                # Retry only on 602 NO_ANSWER_YET - step out of loop if any other error happens
                 print('Error happened --> Giving up')
                 break
             if self.verbose:
@@ -258,8 +278,7 @@ class Py9kw:
             time.sleep(wait_seconds_inbetween)
             total_time_waited += wait_seconds_inbetween
         printInfo('Time expired! Failed to find result!')
-        # TODO: Check this
-        self.errorint = 602
+        self.errorint = 601
         self.errormsg = 'ERROR_TIMEOUT'
         return None, self.errorint, self.errormsg
 
@@ -285,7 +304,7 @@ class Py9kw:
         nodata = response.get('nodata', -1)
         if nodata == 1:
             printInfo('No answer yet')
-            self.errorint = 603
+            self.errorint = 602
             self.errormsg = 'NO_ANSWER_YET'
             return None, self.errorint, self.errormsg
         elif answer is not None and answer == 'ERROR NO USER':
