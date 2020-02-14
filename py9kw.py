@@ -25,7 +25,6 @@ import json
 import re
 import time
 import urllib.request
-import validators
 from base64 import b64encode, b64decode
 from os import getenv
 from urllib.parse import urlencode
@@ -419,7 +418,7 @@ if __name__ == '__main__':
     from sys import argv
 
     if len(argv) != 3:
-        printInfo('Usage:', argv[0], '<APIKEY> <TIME TO SOLVE>')
+        printInfo('Usage: '+ argv[0]+ ' <APIKEY> <TIME TO SOLVE>')
         exit(0)
 
     captchaSolver = Py9kw(argv[1], True, True)
@@ -430,7 +429,10 @@ if __name__ == '__main__':
         print('[py9kw-test] Captcha download failure')
         exit(1)
 
-    testcredits, erri, errm = captchaSolver.getcredits()
+    testcredits, erri, errm = captchaSolver.getcredits() or (None,None,None)
+    if testcredits == None:
+        print('[py9kw-test] Error: Invalid API-Key-Config!')
+        exit(1)
     if testcredits < PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA:
         print('[py9kw-test] Not enough Credits! < %d' % PARAM_MIN_CREDITS_TO_SOLVE_ONE_CAPTCHA)
         exit(0)
